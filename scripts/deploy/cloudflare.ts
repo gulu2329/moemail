@@ -4,13 +4,18 @@ import "dotenv/config";
 const CF_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID!;
 const CF_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
 const CUSTOM_DOMAIN = process.env.CUSTOM_DOMAIN;
-const PROJECT_NAME = process.env.PROJECT_NAME || "moemail";
+const PROJECT_NAME = (process.env.PROJECT_NAME || "moemail")
+  .trim()
+  .toLowerCase()
+  .replace(/[^a-z0-9-]+/g, "-")
+  .replace(/-+/g, "-")
+  .replace(/^-|-$/g, "") || "moemail";
 const DATABASE_NAME = process.env.DATABASE_NAME || "moemail-db";
 const KV_NAMESPACE_NAME = process.env.KV_NAMESPACE_NAME || "moemail-kv";
 const DATABASE_ID = process.env.DATABASE_ID;
 
 const client = new Cloudflare({
-  apiKey: CF_API_TOKEN,
+  apiToken: CF_API_TOKEN,
 });
 
 export const getPages = async () => {
