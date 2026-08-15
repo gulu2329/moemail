@@ -33,9 +33,9 @@ const main = async () => {
 
   console.log("Cloudflare API Token is valid.");
 
-  const updatedSettings = await client.emailRouting.dns.create({
+  const updatedSettings = await client.emailRouting.enable({
     zone_id: zoneId,
-    name: domain,
+    body: {},
   });
 
   console.log(
