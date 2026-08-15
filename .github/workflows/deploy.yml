@@ -5,12 +5,28 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      run_migrations:
+        description: Run database migrations
+        required: false
+        type: boolean
+        default: false
+      deploy_email_worker:
+        description: Deploy email Worker
+        required: false
+        type: boolean
+        default: false
+      deploy_cleanup_worker:
+        description: Deploy cleanup Worker
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0  # Get full git history for checking file changes
 
@@ -22,12 +38,12 @@ jobs:
         continue-on-error: true
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
           version: 9
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: 'pnpm'
@@ -50,6 +66,9 @@ jobs:
           AUTH_GOOGLE_ID: ${{ secrets.AUTH_GOOGLE_ID }}
           AUTH_GOOGLE_SECRET: ${{ secrets.AUTH_GOOGLE_SECRET }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          RUN_DATABASE_MIGRATIONS: ${{ github.event_name != 'workflow_dispatch' || inputs.run_migrations }}
+          DEPLOY_EMAIL_WORKER: ${{ github.event_name != 'workflow_dispatch' || inputs.deploy_email_worker }}
+          DEPLOY_CLEANUP_WORKER: ${{ github.event_name != 'workflow_dispatch' || inputs.deploy_cleanup_worker }}
         run: pnpm dlx tsx scripts/deploy/index.ts
 
       # Clean up

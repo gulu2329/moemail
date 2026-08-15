@@ -12,11 +12,25 @@ import {
   getPages,
 } from "./cloudflare";
 
-const PROJECT_NAME = process.env.PROJECT_NAME || "moemail";
+const normalizeCloudflareName = (value: string | undefined, fallback: string) => {
+  const normalized = (value || fallback)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  return normalized || fallback;
+};
+
+const PROJECT_NAME = normalizeCloudflareName(process.env.PROJECT_NAME, "moemail");
 const DATABASE_NAME = process.env.DATABASE_NAME || "moemail-db";
 const KV_NAMESPACE_NAME = process.env.KV_NAMESPACE_NAME || "moemail-kv";
 const CUSTOM_DOMAIN = process.env.CUSTOM_DOMAIN;
 const KV_NAMESPACE_ID = process.env.KV_NAMESPACE_ID;
+const RUN_DATABASE_MIGRATIONS = process.env.RUN_DATABASE_MIGRATIONS !== "false";
+const DEPLOY_EMAIL_WORKER = process.env.DEPLOY_EMAIL_WORKER !== "false";
+const DEPLOY_CLEANUP_WORKER = process.env.DEPLOY_CLEANUP_WORKER !== "false";
 
 /**
  * 验证必要的环境变量
@@ -480,13 +494,25 @@ const main = async () => {
     setupEnvFile();
     setupWranglerConfigs();
     await checkAndCreateDatabase();
-    migrateDatabase();
+    if (RUN_DATABASE_MIGRATIONS) {
+      migrateDatabase();
+    } else {
+      console.log("Skipping database migrations");
+    }
     await checkAndCreateKVNamespace();
     await checkAndCreatePages();
     pushPagesSecret();
     deployPages();
-    deployEmailWorker();
-    deployCleanupWorker();
+    if (DEPLOY_EMAIL_WORKER) {
+      deployEmailWorker();
+    } else {
+      console.log("Skipping Email Worker deployment");
+    }
+    if (DEPLOY_CLEANUP_WORKER) {
+      deployCleanupWorker();
+    } else {
+      console.log("Skipping Cleanup Worker deployment");
+    }
 
     console.log("🎉 Deployment completed successfully");
   } catch (error) {
